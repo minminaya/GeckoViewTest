@@ -67,11 +67,12 @@ class FirstFragment : Fragment() {
             val session = GeckoSession()
             // Workaround for Bug 1758212
             session.contentDelegate = object : ContentDelegate {}
-
+            session.settings.allowJavascript=true
             session.open(sRuntime!!)
             geckoView.setSession(session)
             thread {
                 session.loadUri("http://fangyanhua.top/")
+//                session.loadUri("about:buildconfig")
             }
         }
 //        session.loadUri("https://www.baidu.com/")
@@ -80,13 +81,14 @@ class FirstFragment : Fragment() {
 //        geckoView.visibility = View.INVISIBLE
         binding.buttonFirst.setOnClickListener {
 //            thread {
-//
-//            }
-            for (i in 1..5) {
+            for (i in 1..60) {
                 geckoViewList.forEachIndexed { index, geckoView ->
+//                        UIHelper.runOnUiThreadDelay(30) {
                     capture(geckoView, index)
+//                        }
                 }
             }
+//            }
         }
     }
 
@@ -94,10 +96,9 @@ class FirstFragment : Fragment() {
         val time = measureTimeMillis {
             val capturePixels = geckoView.capturePixels()
             thread {
-                val bitmap: Bitmap?
-                val pollTime = measureTimeMillis {
-                    bitmap = capturePixels.poll()
-                }
+                val capturePixelsStartTime = System.currentTimeMillis()
+                val bitmap: Bitmap? = capturePixels.poll()
+                val pollTime = System.currentTimeMillis() - capturePixelsStartTime
                 Log.d(
                     TAG,
                     "geckoView:$geckoViewIndex, pollTime:${pollTime} ms,currentTimeMillis:${System.currentTimeMillis()}"
@@ -108,6 +109,7 @@ class FirstFragment : Fragment() {
                 thread {
                     val saveBitmapTime = measureTimeMillis {
                         saveBitmap(File(path), bitmap!!, geckoViewIndex)
+                        bitmap.recycle()
                     }
                     Log.d(TAG, "geckoView:$geckoViewIndex, saveBitmapTime:${saveBitmapTime} ms ")
                 }
@@ -115,7 +117,7 @@ class FirstFragment : Fragment() {
                     start = System.currentTimeMillis()
                 }
 
-                if (count.get() == 25) {
+                if (count.get() == 300) {
                     Log.d(TAG, "总时间:${System.currentTimeMillis() - start} ms ")
                 }
             }
